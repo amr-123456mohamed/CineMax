@@ -308,6 +308,7 @@
     (() => {
       "use strict";
       const ADMIN_PASS = "admin123";
+      const ADMIN_SESSION_KEY = "cinema_mix_admin_session";
       const MOVIES_KEY = "cinema_mix_movies";
       const FAV_KEY = "cinema_mix_favs";
       const WATCHLIST_KEY = "cinema_mix_watchlist";
@@ -342,6 +343,7 @@
           login: "Login",
           cancel: "Cancel",
           adminPanel: "Admin Panel",
+          adminLogout: "Logout",
           addMovie: "Add / Edit Movie",
           movieTitle: "Movie Title",
           year: "Year",
@@ -351,6 +353,10 @@
           video: "Video URL",
           trailer: "Trailer URL",
           subtitleUrl: "Subtitle URL (.vtt)",
+          privateMovie: "Private movie (admin only)",
+          uploadPoster: "Upload Poster",
+          uploadVideo: "Upload Video",
+          uploadSubtitle: "Upload Subtitle",
           languageField: "Language",
           durationField: "Duration",
           description: "Description",
@@ -394,6 +400,7 @@
           login: "دخول",
           cancel: "إلغاء",
           adminPanel: "لوحة الإدارة",
+          adminLogout: "تسجيل الخروج",
           addMovie: "إضافة / تعديل فيلم",
           movieTitle: "اسم الفيلم",
           year: "السنة",
@@ -403,6 +410,10 @@
           video: "رابط الفيديو",
           trailer: "رابط التريلر",
           subtitleUrl: "رابط الترجمة (.vtt)",
+          privateMovie: "فيلم خاص (للإدارة فقط)",
+          uploadPoster: "رفع الصورة",
+          uploadVideo: "رفع الفيديو",
+          uploadSubtitle: "رفع الترجمة",
           languageField: "اللغة",
           durationField: "المدة",
           description: "الوصف",
@@ -437,6 +448,7 @@
         watchlist: new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")),
         heroIndex: 0,
         adminEditId: null,
+        isAdmin: localStorage.getItem(ADMIN_SESSION_KEY) === "1",
       };
 
       const el = id => document.getElementById(id);
@@ -482,6 +494,7 @@
       function filterMovies() {
         const { query, category, year } = getFilters();
         state.filtered = state.movies.filter(m => {
+          if (m.isPrivate && !state.isAdmin) return false;
           const byName = m.title.toLowerCase().includes(query);
           const byCategory = category === "all" || m.category === category;
           const byYear = year === "all" || String(m.year) === year;
@@ -524,7 +537,8 @@
       }
 
       function renderHero() {
-        const featured = [...state.movies].sort((a,b) => b.rating - a.rating).slice(0, 4);
+        const visibleMovies = state.movies.filter(m => !m.isPrivate || state.isAdmin);
+        const featured = [...visibleMovies].sort((a,b) => b.rating - a.rating).slice(0, 4);
         if (!featured.length) return;
         el("hero").innerHTML = featured.map((m, i) => `
           <div class="slide ${i===0?"active":""}" data-index="${i}" style="background-image:url('${escapeHtml(m.poster)}')">
@@ -643,6 +657,10 @@
       }
 
       function openAdminLogin() {
+        if (state.isAdmin) {
+          openAdminPanel();
+          return;
+        }
         el("adminLoginPanel").innerHTML = `
           <h2>${t("adminLogin")}</h2>
           <div class="admin-grid">
@@ -656,10 +674,30 @@
         el("adminLoginBtn").onclick = () => {
           const pass = el("adminPassword").value;
           if (pass === ADMIN_PASS) {
+            state.isAdmin = true;
+            localStorage.setItem(ADMIN_SESSION_KEY, "1");
             closeModal("adminLoginModal");
             openAdminPanel();
           } else notify(t("loginFailed"), "error");
         };
+      }
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("failed"));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function readFileAsText(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(new Error("failed"));
+          reader.readAsText(file);
+        });
       }
 
       function openAdminPanel() {
@@ -667,7 +705,10 @@
         el("adminPanel").innerHTML = `
           <div class="row" style="justify-content: space-between">
             <h2>${t("adminPanel")}</h2>
-            <button class="btn secondary" onclick="document.getElementById('adminPanelModal').classList.remove('open')">${t("close")}</button>
+            <div class="row">
+              <button class="btn secondary" id="adminLogoutBtn">${t("adminLogout")}</button>
+              <button class="btn secondary" onclick="document.getElementById('adminPanelModal').classList.remove('open')">${t("close")}</button>
+            </div>
           </div>
           <h3>${t("addMovie")}</h3>
           <div class="admin-grid">
@@ -678,10 +719,17 @@
             <input id="f_lang" class="input" placeholder="${t("languageField")}" value="${escapeHtml(editing?.language || "")}" />
             <input id="f_duration" class="input" placeholder="${t("durationField")}" value="${escapeHtml(editing?.duration || "")}" />
             <input id="f_poster" class="input" placeholder="${t("poster")}" value="${escapeHtml(editing?.poster || "")}" />
+            <input id="f_uploadPoster" class="input" type="file" accept="image/*" title="${t("uploadPoster")}" />
             <input id="f_video" class="input" placeholder="${t("video")}" value="${escapeHtml(editing?.video || "")}" />
+            <input id="f_uploadVideo" class="input" type="file" accept="video/*" title="${t("uploadVideo")}" />
             <input id="f_trailer" class="input" placeholder="${t("trailer")}" value="${escapeHtml(editing?.trailer || "")}" />
             <input id="f_subtitle" class="input" placeholder="${t("subtitleUrl")}" value="${escapeHtml(editing?.subtitle || "")}" />
+            <input id="f_uploadSubtitle" class="input" type="file" accept=".vtt,.srt,text/vtt" title="${t("uploadSubtitle")}" />
           </div>
+          <label class="row" style="margin-top:8px">
+            <input id="f_private" type="checkbox" ${editing?.isPrivate ? "checked" : ""} />
+            <span>${t("privateMovie")}</span>
+          </label>
           <textarea id="f_description" class="input" placeholder="${t("description")}">${escapeHtml(editing?.description || "")}</textarea>
           <div class="row" style="margin-top: 8px">
             <button class="btn" id="saveMovieBtn">${t("saveMovie")}</button>
@@ -706,7 +754,35 @@
 
         openModal("adminPanelModal");
 
-        el("saveMovieBtn").onclick = () => {
+        el("adminLogoutBtn").onclick = () => {
+          state.isAdmin = false;
+          state.adminEditId = null;
+          localStorage.removeItem(ADMIN_SESSION_KEY);
+          closeModal("adminPanelModal");
+          render();
+        };
+
+        el("saveMovieBtn").onclick = async () => {
+          let posterValue = el("f_poster").value.trim();
+          let videoValue = el("f_video").value.trim();
+          let subtitleValue = el("f_subtitle").value.trim();
+
+          const posterFile = el("f_uploadPoster").files[0];
+          const videoFile = el("f_uploadVideo").files[0];
+          const subtitleFile = el("f_uploadSubtitle").files[0];
+
+          try {
+            if (posterFile) posterValue = await readFileAsDataUrl(posterFile);
+            if (videoFile) videoValue = URL.createObjectURL(videoFile);
+            if (subtitleFile) {
+              const subtitleText = await readFileAsText(subtitleFile);
+              subtitleValue = `data:text/vtt;charset=utf-8,${encodeURIComponent(subtitleText)}`;
+            }
+          } catch {
+            notify("Failed to read uploaded files.", "error");
+            return;
+          }
+
           const data = {
             id: state.adminEditId || crypto.randomUUID(),
             title: el("f_title").value.trim(),
@@ -715,14 +791,15 @@
             rating: Number(el("f_rating").value),
             language: el("f_lang").value.trim(),
             duration: el("f_duration").value.trim(),
-            poster: el("f_poster").value.trim(),
-            video: el("f_video").value.trim(),
+            poster: posterValue,
+            video: videoValue,
             trailer: el("f_trailer").value.trim(),
-            subtitle: el("f_subtitle").value.trim(),
+            subtitle: subtitleValue,
             description: el("f_description").value.trim(),
+            isPrivate: el("f_private").checked,
             tags: state.adminEditId ? (editing.tags || []) : ["new"],
             views: state.adminEditId ? editing.views || 0 : 0,
-            sources: [{label:"HD", url: el("f_video").value.trim()}]
+            sources: [{label:"HD", url: videoValue}]
           };
           if (!data.title || !data.year || !data.category || !data.video || !data.poster || !data.description) {
             notify(t("invalidMovie"), "error");
