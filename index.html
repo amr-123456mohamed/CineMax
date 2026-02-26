@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinema MIX</title>
+  <style>
+    :root {
+      --bg: #07080c;
+      --bg-soft: #11142a;
+      --card: #13162d;
+      --card-2: #1b1f3d;
+      --text: #f5f7ff;
+      --muted: #9fa6c5;
+      --primary: #4e6cff;
+      --accent: #8d3bff;
+      --danger: #ff4466;
+      --success: #2ad08b;
+      --shadow: 0 10px 35px rgba(0, 0, 0, 0.45);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      background: radial-gradient(circle at 20% -20%, #2a2f66 0%, transparent 35%),
+        radial-gradient(circle at 80% -10%, #3f1d69 0%, transparent 35%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container { width: min(1200px, 94%); margin: 0 auto; }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      backdrop-filter: blur(10px);
+      background: rgba(10, 12, 22, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 12px 0;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--text);
+      text-decoration: none;
+      margin-inline-end: auto;
+    }
+
+    .brand span { color: var(--accent); }
+
+    .search-wrap {
+      position: relative;
+      flex: 1 1 260px;
+      max-width: 380px;
+    }
+
+    .search-wrap input,
+    select,
+    .input,
+    textarea {
+      width: 100%;
+      background: #0f1230;
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 11px;
+      padding: 10px 12px;
+      outline: none;
+      transition: 0.25s ease;
+    }
+
+    .search-wrap input:focus,
+    select:focus,
+    .input:focus,
+    textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(78, 108, 255, 0.25); }
+
+    .controls { display: flex; gap: 10px; flex-wrap: wrap; }
+    .filter { min-width: 130px; }
+
+    .btn {
+      border: 0;
+      border-radius: 11px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+      color: white;
+      background: linear-gradient(120deg, var(--primary), var(--accent));
+      box-shadow: var(--shadow);
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
+    .btn.secondary { background: #1f2449; box-shadow: none; border: 1px solid rgba(255,255,255,.16); }
+    .btn.danger { background: var(--danger); }
+
+    .hero {
+      margin-top: 16px;
+      border-radius: 22px;
+      overflow: hidden;
+      position: relative;
+      min-height: 380px;
+      background: #15193a;
+      box-shadow: var(--shadow);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: scale(1.05);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      display: flex;
+      align-items: end;
+      padding: 2rem;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .slide.active { opacity: 1; transform: scale(1); }
+    .slide::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(5, 6, 12, 0.95), rgba(10, 12, 20, 0.35));
+      z-index: 0;
+    }
+
+    .slide-content { position: relative; z-index: 1; max-width: 650px; }
+    .tag { display: inline-block; background: rgba(141,59,255,.2); padding: 6px 10px; border-radius: 99px; font-size: .82rem; }
+    .slide h1 { margin: .8rem 0 .5rem; font-size: clamp(1.4rem, 4vw, 2.6rem); }
+    .slide p { color: #d3d8f3; }
+
+    main section { margin-top: 2rem; }
+    .section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: .9rem; }
+    .section-title h2 { margin: 0; font-size: 1.2rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: linear-gradient(160deg, var(--card), var(--card-2));
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+      transition: .25s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover { transform: translateY(-5px); border-color: rgba(141,59,255,.45); }
+    .poster { width: 100%; height: 250px; object-fit: cover; background: #222; }
+    .card-body { padding: .75rem; display: grid; gap: .45rem; }
+    .meta { color: var(--muted); font-size: .85rem; display: flex; justify-content: space-between; }
+    .title { margin: 0; font-size: .97rem; min-height: 40px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { background: rgba(78,108,255,.2); border: 1px solid rgba(78,108,255,.4); padding: 3px 7px; border-radius: 99px; font-size: .75rem; }
+    .card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .card-actions .btn { flex: 1; padding: 8px 10px; font-size: .84rem; box-shadow: none; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(4,6,10,.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 1rem;
+    }
+
+    .modal.open { display: flex; }
+    .panel {
+      width: min(980px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      background: #0f1330;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 1rem;
+      animation: pop .25s ease;
+    }
+
+    @keyframes pop { from { opacity: 0; transform: scale(.95); } to { opacity: 1; transform: scale(1); } }
+
+    .detail-grid { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; }
+    .detail-grid img { width: 100%; border-radius: 14px; }
+    .muted { color: var(--muted); }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .player-wrap video {
+      width: 100%;
+      max-height: 420px;
+      background: #000;
+      border-radius: 12px;
+      margin-bottom: .7rem;
+    }
+
+    .admin-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 10px; }
+    textarea { min-height: 90px; resize: vertical; }
+    .table { width: 100%; border-collapse: collapse; margin-top: .8rem; font-size: .9rem; }
+    .table th, .table td { border-bottom: 1px solid rgba(255,255,255,.1); padding: 8px; text-align: start; }
+
+    .toasts { position: fixed; right: 16px; bottom: 16px; z-index: 80; display: grid; gap: 8px; }
+    .toast { background: #171d42; border: 1px solid rgba(255,255,255,.2); padding: 10px 12px; border-radius: 12px; min-width: 180px; }
+
+    .hidden-trigger {
+      position: fixed;
+      left: 10px;
+      bottom: 10px;
+      width: 16px;
+      height: 16px;
+      opacity: 0.15;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      z-index: 35;
+    }
+
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed rgba(255,255,255,.2);
+      border-radius: 12px;
+      padding: 18px;
+      background: rgba(255,255,255,.03);
+    }
+
+    footer { padding: 2.4rem 0; color: var(--muted); text-align: center; }
+
+    @media (max-width: 760px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .poster { height: 220px; }
+      .slide { min-height: 320px; padding: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <a href="#" class="brand">Cinema <span>MIX</span></a>
+      <div class="search-wrap">
+        <input id="searchInput" type="text" placeholder="Search movies..." />
+      </div>
+      <div class="controls">
+        <select id="categoryFilter" class="filter"></select>
+        <select id="yearFilter" class="filter"></select>
+        <button class="btn secondary" id="langBtn">AR</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero" id="hero"></section>
+
+    <section>
+      <div class="section-title"><h2 data-i18n="newMovies">New Movies</h2></div>
+      <div id="newGrid" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2 data-i18n="trending">Trending</h2></div>
+      <div id="trendingGrid" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2 data-i18n="mostWatched">Most Watched</h2></div>
+      <div id="watchedGrid" class="grid"></div>
+    </section>
+
+    <section>
+      <div class="section-title"><h2 data-i18n="favorites">Favorites & Watchlist</h2></div>
+      <div id="favoriteGrid" class="grid"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Cinema MIX © 2026</p>
+    <p class="muted">Press Ctrl + Shift + A for admin mode</p>
+  </footer>
+
+  <div class="modal" id="detailsModal"><div class="panel" id="detailsPanel"></div></div>
+  <div class="modal" id="playerModal"><div class="panel" id="playerPanel"></div></div>
+  <div class="modal" id="adminLoginModal"><div class="panel" id="adminLoginPanel"></div></div>
+  <div class="modal" id="adminPanelModal"><div class="panel" id="adminPanel"></div></div>
+  <div class="toasts" id="toasts"></div>
+  <button class="hidden-trigger" id="adminTrigger" title="admin"></button>
+
+  <script>
+    (() => {
+      "use strict";
+      const ADMIN_PASS = "admin123";
+      const MOVIES_KEY = "cinema_mix_movies";
+      const FAV_KEY = "cinema_mix_favs";
+      const WATCHLIST_KEY = "cinema_mix_watchlist";
+      const LANG_KEY = "cinema_mix_lang";
+
+      const i18n = {
+        en: {
+          searchPlaceholder: "Search movies...",
+          allCategories: "All Categories",
+          allYears: "All Years",
+          newMovies: "New Movies",
+          trending: "Trending",
+          mostWatched: "Most Watched",
+          favorites: "Favorites & Watchlist",
+          watchNow: "Watch Now",
+          details: "Details",
+          addFav: "Favorite",
+          addWatchlist: "Watchlist",
+          removeFav: "Remove Favorite",
+          removeWatchlist: "Remove Watchlist",
+          watchTrailer: "Watch Trailer",
+          close: "Close",
+          language: "Language",
+          duration: "Duration",
+          similar: "Similar Movies",
+          quality: "Quality",
+          subtitle: "Subtitle",
+          fullScreen: "Fullscreen",
+          noItems: "No movies found.",
+          adminLogin: "Admin Login",
+          password: "Password",
+          login: "Login",
+          cancel: "Cancel",
+          adminPanel: "Admin Panel",
+          addMovie: "Add / Edit Movie",
+          movieTitle: "Movie Title",
+          year: "Year",
+          category: "Category",
+          rating: "Rating (0-10)",
+          poster: "Poster URL",
+          video: "Video URL",
+          trailer: "Trailer URL",
+          subtitleUrl: "Subtitle URL (.vtt)",
+          languageField: "Language",
+          durationField: "Duration",
+          description: "Description",
+          saveMovie: "Save Movie",
+          clearForm: "Clear Form",
+          moviesList: "Movies List",
+          edit: "Edit",
+          delete: "Delete",
+          loginFailed: "Incorrect admin password.",
+          saved: "Movie saved successfully.",
+          deleted: "Movie deleted.",
+          trailerMissing: "Trailer not available.",
+          invalidMovie: "Please fill all required movie fields.",
+          playerError: "Unable to load video source.",
+        },
+        ar: {
+          searchPlaceholder: "ابحث عن فيلم...",
+          allCategories: "كل التصنيفات",
+          allYears: "كل السنوات",
+          newMovies: "أحدث الأفلام",
+          trending: "الأكثر رواجًا",
+          mostWatched: "الأكثر مشاهدة",
+          favorites: "المفضلة وقائمة المشاهدة",
+          watchNow: "شاهد الآن",
+          details: "التفاصيل",
+          addFav: "مفضلة",
+          addWatchlist: "قائمة المشاهدة",
+          removeFav: "إزالة من المفضلة",
+          removeWatchlist: "إزالة من القائمة",
+          watchTrailer: "مشاهدة التريلر",
+          close: "إغلاق",
+          language: "اللغة",
+          duration: "المدة",
+          similar: "أفلام مشابهة",
+          quality: "الجودة",
+          subtitle: "الترجمة",
+          fullScreen: "ملء الشاشة",
+          noItems: "لا توجد أفلام مطابقة.",
+          adminLogin: "دخول الإدارة",
+          password: "كلمة المرور",
+          login: "دخول",
+          cancel: "إلغاء",
+          adminPanel: "لوحة الإدارة",
+          addMovie: "إضافة / تعديل فيلم",
+          movieTitle: "اسم الفيلم",
+          year: "السنة",
+          category: "التصنيف",
+          rating: "التقييم (0-10)",
+          poster: "رابط الصورة",
+          video: "رابط الفيديو",
+          trailer: "رابط التريلر",
+          subtitleUrl: "رابط الترجمة (.vtt)",
+          languageField: "اللغة",
+          durationField: "المدة",
+          description: "الوصف",
+          saveMovie: "حفظ الفيلم",
+          clearForm: "مسح النموذج",
+          moviesList: "قائمة الأفلام",
+          edit: "تعديل",
+          delete: "حذف",
+          loginFailed: "كلمة مرور الإدارة غير صحيحة.",
+          saved: "تم حفظ الفيلم بنجاح.",
+          deleted: "تم حذف الفيلم.",
+          trailerMissing: "لا يوجد تريلر متاح.",
+          invalidMovie: "الرجاء ملء جميع الحقول المطلوبة.",
+          playerError: "تعذر تحميل الفيديو.",
+        }
+      };
+
+      const initialMovies = [
+        { id: crypto.randomUUID(), title: "Dune: Part Two", year: 2024, category: "Action", rating: 8.8, language: "English", duration: "166 min", description: "Paul Atreides unites with the Fremen to fight for Arrakis in a powerful cinematic journey.", poster: "https://image.tmdb.org/t/p/w780/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", trailer: "https://www.youtube.com/watch?v=Way9Dexny3w", subtitle: "https://raw.githubusercontent.com/mozilla/vtt.js/master/test/fixtures/test.vtt", tags: ["new", "trending"], views: 990 },
+        { id: crypto.randomUUID(), title: "The Batman", year: 2022, category: "Drama", rating: 7.8, language: "English", duration: "176 min", description: "Batman uncovers corruption in Gotham while chasing the mysterious Riddler.", poster: "https://image.tmdb.org/t/p/w780/74xTEgt7R36Fpooo50r9T25onhq.jpg", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", trailer: "https://www.youtube.com/watch?v=mqqft2x_Aa4", subtitle: "", tags: ["trending", "watched"], views: 1200 },
+        { id: crypto.randomUUID(), title: "Scream VI", year: 2023, category: "Horror", rating: 6.5, language: "English", duration: "123 min", description: "Ghostface follows survivors into New York, where new rules of terror begin.", poster: "https://image.tmdb.org/t/p/w780/wDWwtvkRRlgTiUr6TyLSMX8FCuZ.jpg", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4", trailer: "https://www.youtube.com/watch?v=h74AXqw4Opc", subtitle: "", tags: ["new"], views: 770 },
+        { id: crypto.randomUUID(), title: "Free Guy", year: 2021, category: "Comedy", rating: 7.1, language: "English", duration: "115 min", description: "A bank teller realizes he's an NPC in a video game and rewrites his own story.", poster: "https://image.tmdb.org/t/p/w780/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", trailer: "https://www.youtube.com/watch?v=X2m-08cOAbc", subtitle: "", tags: ["watched"], views: 1500 },
+        { id: crypto.randomUUID(), title: "Interstellar", year: 2014, category: "Sci-Fi", rating: 8.6, language: "English", duration: "169 min", description: "Explorers travel through a wormhole to ensure humanity's survival.", poster: "https://image.tmdb.org/t/p/w780/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", trailer: "https://www.youtube.com/watch?v=zSWdZVtXT7E", subtitle: "", tags: ["watched", "trending"], views: 1800 }
+      ];
+
+      const state = {
+        lang: localStorage.getItem(LANG_KEY) || "en",
+        movies: [],
+        filtered: [],
+        selectedMovie: null,
+        favorites: new Set(JSON.parse(localStorage.getItem(FAV_KEY) || "[]")),
+        watchlist: new Set(JSON.parse(localStorage.getItem(WATCHLIST_KEY) || "[]")),
+        heroIndex: 0,
+        adminEditId: null,
+      };
+
+      const el = id => document.getElementById(id);
+      const t = key => i18n[state.lang][key] || key;
+      const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, s => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s]));
+
+      function notify(message, type = "info") {
+        const toast = document.createElement("div");
+        toast.className = "toast";
+        if (type === "error") toast.style.borderColor = "rgba(255,68,102,.8)";
+        if (type === "success") toast.style.borderColor = "rgba(42,208,139,.8)";
+        toast.textContent = message;
+        el("toasts").appendChild(toast);
+        setTimeout(() => toast.remove(), 2800);
+      }
+
+      function saveMovies() { localStorage.setItem(MOVIES_KEY, JSON.stringify(state.movies)); }
+      function saveFavs() { localStorage.setItem(FAV_KEY, JSON.stringify([...state.favorites])); }
+      function saveWatchlist() { localStorage.setItem(WATCHLIST_KEY, JSON.stringify([...state.watchlist])); }
+
+      function loadMovies() {
+        const stored = JSON.parse(localStorage.getItem(MOVIES_KEY) || "null");
+        state.movies = Array.isArray(stored) && stored.length ? stored : initialMovies;
+        saveMovies();
+      }
+
+      function applyLanguage() {
+        document.documentElement.lang = state.lang;
+        document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+        el("langBtn").textContent = state.lang === "en" ? "AR" : "EN";
+        el("searchInput").placeholder = t("searchPlaceholder");
+        document.querySelectorAll("[data-i18n]").forEach(node => node.textContent = t(node.dataset.i18n));
+      }
+
+      function getFilters() {
+        return {
+          query: el("searchInput").value.trim().toLowerCase(),
+          category: el("categoryFilter").value,
+          year: el("yearFilter").value,
+        };
+      }
+
+      function filterMovies() {
+        const { query, category, year } = getFilters();
+        state.filtered = state.movies.filter(m => {
+          const byName = m.title.toLowerCase().includes(query);
+          const byCategory = category === "all" || m.category === category;
+          const byYear = year === "all" || String(m.year) === year;
+          return byName && byCategory && byYear;
+        });
+      }
+
+      function cardTemplate(movie) {
+        const isFav = state.favorites.has(movie.id);
+        const inWatch = state.watchlist.has(movie.id);
+        return `
+          <article class="card">
+            <img class="poster" loading="lazy" src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)} poster" onerror="this.src='https://via.placeholder.com/400x600/111/eee?text=No+Image'" />
+            <div class="card-body">
+              <h3 class="title">${escapeHtml(movie.title)}</h3>
+              <div class="meta"><span>⭐ ${movie.rating}</span><span>${movie.year}</span></div>
+              <div class="chips"><span class="chip">${escapeHtml(movie.category)}</span><span class="chip">${escapeHtml(movie.duration)}</span></div>
+              <div class="card-actions">
+                <button class="btn" data-action="watch" data-id="${movie.id}">${t("watchNow")}</button>
+                <button class="btn secondary" data-action="details" data-id="${movie.id}">${t("details")}</button>
+              </div>
+              <div class="card-actions">
+                <button class="btn secondary" data-action="fav" data-id="${movie.id}">${isFav ? t("removeFav") : t("addFav")}</button>
+                <button class="btn secondary" data-action="list" data-id="${movie.id}">${inWatch ? t("removeWatchlist") : t("addWatchlist")}</button>
+              </div>
+            </div>
+          </article>`;
+      }
+
+      function renderGrids() {
+        filterMovies();
+        const fill = (id, list) => {
+          el(id).innerHTML = list.length ? list.map(cardTemplate).join("") : `<div class='empty'>${t("noItems")}</div>`;
+        };
+
+        fill("newGrid", state.filtered.filter(m => m.tags?.includes("new")));
+        fill("trendingGrid", state.filtered.filter(m => m.tags?.includes("trending")));
+        fill("watchedGrid", state.filtered.filter(m => m.tags?.includes("watched") || m.views > 1000));
+        fill("favoriteGrid", state.filtered.filter(m => state.favorites.has(m.id) || state.watchlist.has(m.id)));
+      }
+
+      function renderHero() {
+        const featured = [...state.movies].sort((a,b) => b.rating - a.rating).slice(0, 4);
+        if (!featured.length) return;
+        el("hero").innerHTML = featured.map((m, i) => `
+          <div class="slide ${i===0?"active":""}" data-index="${i}" style="background-image:url('${escapeHtml(m.poster)}')">
+            <div class="slide-content">
+              <span class="tag">Cinema MIX</span>
+              <h1>${escapeHtml(m.title)}</h1>
+              <p>${escapeHtml(m.description)}</p>
+              <div class="row">
+                <button class="btn" data-action="watch" data-id="${m.id}">${t("watchNow")}</button>
+                <button class="btn secondary" data-action="details" data-id="${m.id}">${t("details")}</button>
+              </div>
+            </div>
+          </div>`).join("");
+
+        clearInterval(window.__heroTimer);
+        window.__heroTimer = setInterval(() => {
+          const slides = [...el("hero").querySelectorAll(".slide")];
+          state.heroIndex = (state.heroIndex + 1) % slides.length;
+          slides.forEach((s, idx) => s.classList.toggle("active", idx === state.heroIndex));
+        }, 4200);
+      }
+
+      function buildFilters() {
+        const categories = [...new Set(state.movies.map(m => m.category))].sort();
+        const years = [...new Set(state.movies.map(m => m.year))].sort((a,b)=>b-a);
+        el("categoryFilter").innerHTML = `<option value="all">${t("allCategories")}</option>` + categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+        el("yearFilter").innerHTML = `<option value="all">${t("allYears")}</option>` + years.map(y => `<option value="${y}">${y}</option>`).join("");
+      }
+
+      function openModal(id) { el(id).classList.add("open"); }
+      function closeModal(id) { el(id).classList.remove("open"); }
+
+      function openDetails(movieId) {
+        const movie = state.movies.find(m => m.id === movieId);
+        if (!movie) return;
+        const similar = state.movies.filter(m => m.category === movie.category && m.id !== movie.id).slice(0, 4);
+
+        el("detailsPanel").innerHTML = `
+          <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+            <h2 style="margin:0">${escapeHtml(movie.title)}</h2>
+            <button class="btn secondary" onclick="document.getElementById('detailsModal').classList.remove('open')">${t("close")}</button>
+          </div>
+          <div class="detail-grid">
+            <img src="${escapeHtml(movie.poster)}" alt="${escapeHtml(movie.title)}" />
+            <div>
+              <p>${escapeHtml(movie.description)}</p>
+              <div class="row muted"><strong>⭐ ${movie.rating}</strong> • ${movie.year} • ${escapeHtml(movie.category)} • ${t("duration")}: ${escapeHtml(movie.duration)} • ${t("language")}: ${escapeHtml(movie.language)}</div>
+              <div class="row" style="margin-top: 8px">
+                <button class="btn" data-action="watch" data-id="${movie.id}">${t("watchNow")}</button>
+                <button class="btn secondary" data-action="trailer" data-id="${movie.id}">${t("watchTrailer")}</button>
+              </div>
+              <h3>${t("similar")}</h3>
+              <div class="grid">${similar.map(cardTemplate).join("") || `<div class='empty'>${t("noItems")}</div>`}</div>
+            </div>
+          </div>`;
+
+        openModal("detailsModal");
+      }
+
+      function openPlayer(movieId) {
+        const movie = state.movies.find(m => m.id === movieId);
+        if (!movie) return;
+        const sources = movie.sources && movie.sources.length ? movie.sources : [{ label: "HD", url: movie.video }];
+
+        el("playerPanel").innerHTML = `
+          <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+            <h2 style="margin:0">${escapeHtml(movie.title)}</h2>
+            <button class="btn secondary" onclick="document.getElementById('playerModal').classList.remove('open')">${t("close")}</button>
+          </div>
+          <div class="player-wrap">
+            <video id="videoPlayer" controls>
+              <source src="${escapeHtml(sources[0].url)}" type="video/mp4" />
+              ${movie.subtitle ? `<track label="English" kind="subtitles" srclang="en" src="${escapeHtml(movie.subtitle)}" default />` : ""}
+            </video>
+            <div class="row">
+              <label>${t("quality")}</label>
+              <select id="qualitySelect">${sources.map((s, i) => `<option value="${i}">${escapeHtml(s.label)}</option>`).join("")}</select>
+              <button class="btn secondary" id="fullscreenBtn">${t("fullScreen")}</button>
+            </div>
+          </div>`;
+
+        openModal("playerModal");
+        const player = el("videoPlayer");
+        player.addEventListener("error", () => notify(t("playerError"), "error"));
+        el("qualitySelect").addEventListener("change", (e) => {
+          const idx = Number(e.target.value);
+          const time = player.currentTime;
+          player.src = sources[idx].url;
+          player.currentTime = time;
+          player.play().catch(() => {});
+        });
+        el("fullscreenBtn").addEventListener("click", () => {
+          if (player.requestFullscreen) player.requestFullscreen().catch(() => {});
+        });
+      }
+
+      function handleAction(action, id) {
+        const movie = state.movies.find(m => m.id === id);
+        if (!movie) return;
+        if (action === "details") openDetails(id);
+        if (action === "watch") openPlayer(id);
+        if (action === "trailer") {
+          if (movie.trailer) window.open(movie.trailer, "_blank", "noopener");
+          else notify(t("trailerMissing"), "error");
+        }
+        if (action === "fav") {
+          state.favorites.has(id) ? state.favorites.delete(id) : state.favorites.add(id);
+          saveFavs();
+          render();
+        }
+        if (action === "list") {
+          state.watchlist.has(id) ? state.watchlist.delete(id) : state.watchlist.add(id);
+          saveWatchlist();
+          render();
+        }
+      }
+
+      function openAdminLogin() {
+        el("adminLoginPanel").innerHTML = `
+          <h2>${t("adminLogin")}</h2>
+          <div class="admin-grid">
+            <input id="adminPassword" class="input" type="password" placeholder="${t("password")}" />
+          </div>
+          <div class="row" style="margin-top: 10px">
+            <button class="btn" id="adminLoginBtn">${t("login")}</button>
+            <button class="btn secondary" onclick="document.getElementById('adminLoginModal').classList.remove('open')">${t("cancel")}</button>
+          </div>`;
+        openModal("adminLoginModal");
+        el("adminLoginBtn").onclick = () => {
+          const pass = el("adminPassword").value;
+          if (pass === ADMIN_PASS) {
+            closeModal("adminLoginModal");
+            openAdminPanel();
+          } else notify(t("loginFailed"), "error");
+        };
+      }
+
+      function openAdminPanel() {
+        const editing = state.movies.find(m => m.id === state.adminEditId);
+        el("adminPanel").innerHTML = `
+          <div class="row" style="justify-content: space-between">
+            <h2>${t("adminPanel")}</h2>
+            <button class="btn secondary" onclick="document.getElementById('adminPanelModal').classList.remove('open')">${t("close")}</button>
+          </div>
+          <h3>${t("addMovie")}</h3>
+          <div class="admin-grid">
+            <input id="f_title" class="input" placeholder="${t("movieTitle")}" value="${escapeHtml(editing?.title || "")}" />
+            <input id="f_year" class="input" type="number" min="1900" max="2100" placeholder="${t("year")}" value="${escapeHtml(editing?.year || "")}" />
+            <input id="f_category" class="input" placeholder="${t("category")}" value="${escapeHtml(editing?.category || "")}" />
+            <input id="f_rating" class="input" type="number" min="0" max="10" step="0.1" placeholder="${t("rating")}" value="${escapeHtml(editing?.rating || "")}" />
+            <input id="f_lang" class="input" placeholder="${t("languageField")}" value="${escapeHtml(editing?.language || "")}" />
+            <input id="f_duration" class="input" placeholder="${t("durationField")}" value="${escapeHtml(editing?.duration || "")}" />
+            <input id="f_poster" class="input" placeholder="${t("poster")}" value="${escapeHtml(editing?.poster || "")}" />
+            <input id="f_video" class="input" placeholder="${t("video")}" value="${escapeHtml(editing?.video || "")}" />
+            <input id="f_trailer" class="input" placeholder="${t("trailer")}" value="${escapeHtml(editing?.trailer || "")}" />
+            <input id="f_subtitle" class="input" placeholder="${t("subtitleUrl")}" value="${escapeHtml(editing?.subtitle || "")}" />
+          </div>
+          <textarea id="f_description" class="input" placeholder="${t("description")}">${escapeHtml(editing?.description || "")}</textarea>
+          <div class="row" style="margin-top: 8px">
+            <button class="btn" id="saveMovieBtn">${t("saveMovie")}</button>
+            <button class="btn secondary" id="clearFormBtn">${t("clearForm")}</button>
+          </div>
+
+          <h3>${t("moviesList")}</h3>
+          <table class="table">
+            <thead><tr><th>${t("movieTitle")}</th><th>${t("category")}</th><th>${t("year")}</th><th>⚙</th></tr></thead>
+            <tbody>
+              ${state.movies.map(m => `<tr>
+                <td>${escapeHtml(m.title)}</td>
+                <td>${escapeHtml(m.category)}</td>
+                <td>${m.year}</td>
+                <td>
+                  <button class='btn secondary' data-admin='edit' data-id='${m.id}'>${t("edit")}</button>
+                  <button class='btn danger' data-admin='delete' data-id='${m.id}'>${t("delete")}</button>
+                </td>
+              </tr>`).join("")}
+            </tbody>
+          </table>`;
+
+        openModal("adminPanelModal");
+
+        el("saveMovieBtn").onclick = () => {
+          const data = {
+            id: state.adminEditId || crypto.randomUUID(),
+            title: el("f_title").value.trim(),
+            year: Number(el("f_year").value),
+            category: el("f_category").value.trim(),
+            rating: Number(el("f_rating").value),
+            language: el("f_lang").value.trim(),
+            duration: el("f_duration").value.trim(),
+            poster: el("f_poster").value.trim(),
+            video: el("f_video").value.trim(),
+            trailer: el("f_trailer").value.trim(),
+            subtitle: el("f_subtitle").value.trim(),
+            description: el("f_description").value.trim(),
+            tags: state.adminEditId ? (editing.tags || []) : ["new"],
+            views: state.adminEditId ? editing.views || 0 : 0,
+            sources: [{label:"HD", url: el("f_video").value.trim()}]
+          };
+          if (!data.title || !data.year || !data.category || !data.video || !data.poster || !data.description) {
+            notify(t("invalidMovie"), "error");
+            return;
+          }
+          const idx = state.movies.findIndex(m => m.id === data.id);
+          if (idx >= 0) state.movies[idx] = data;
+          else state.movies.unshift(data);
+          state.adminEditId = null;
+          saveMovies();
+          notify(t("saved"), "success");
+          render();
+          openAdminPanel();
+        };
+
+        el("clearFormBtn").onclick = () => {
+          state.adminEditId = null;
+          openAdminPanel();
+        };
+
+        el("adminPanel").querySelectorAll("[data-admin]").forEach(btn => {
+          btn.onclick = () => {
+            const action = btn.dataset.admin;
+            const id = btn.dataset.id;
+            if (action === "edit") {
+              state.adminEditId = id;
+              openAdminPanel();
+            }
+            if (action === "delete") {
+              state.movies = state.movies.filter(m => m.id !== id);
+              state.favorites.delete(id);
+              state.watchlist.delete(id);
+              saveMovies(); saveFavs(); saveWatchlist();
+              notify(t("deleted"), "success");
+              render();
+              openAdminPanel();
+            }
+          };
+        });
+      }
+
+      function wireEvents() {
+        ["newGrid","trendingGrid","watchedGrid","favoriteGrid","hero","detailsPanel"].forEach(zoneId => {
+          el(zoneId).addEventListener("click", e => {
+            const btn = e.target.closest("[data-action]");
+            if (!btn) return;
+            handleAction(btn.dataset.action, btn.dataset.id);
+          });
+        });
+
+        ["detailsModal","playerModal","adminLoginModal","adminPanelModal"].forEach(mid => {
+          el(mid).addEventListener("click", e => { if (e.target.id === mid) closeModal(mid); });
+        });
+
+        el("searchInput").addEventListener("input", renderGrids);
+        el("categoryFilter").addEventListener("change", renderGrids);
+        el("yearFilter").addEventListener("change", renderGrids);
+        el("langBtn").addEventListener("click", () => {
+          state.lang = state.lang === "en" ? "ar" : "en";
+          localStorage.setItem(LANG_KEY, state.lang);
+          render();
+        });
+
+        const openAdmin = () => openAdminLogin();
+        el("adminTrigger").addEventListener("dblclick", openAdmin);
+        window.addEventListener("keydown", e => {
+          if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") openAdmin();
+        });
+      }
+
+      function render() {
+        applyLanguage();
+        buildFilters();
+        renderHero();
+        renderGrids();
+      }
+
+      function init() {
+        loadMovies();
+        wireEvents();
+        render();
+      }
+
+      init();
+    })();
+  </script>
+</body>
+</html>
