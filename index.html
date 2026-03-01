@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinema MIX - Streaming Hub</title>
+  <style>
+    :root {
+      --bg: #06070d;
+      --bg-2: #101322;
+      --card: #121528;
+      --muted: #9fa9c9;
+      --text: #ecf1ff;
+      --primary: #4a7dff;
+      --primary-2: #7b4dff;
+      --danger: #f25f7a;
+      --success: #26d07c;
+      --warning: #f3be4d;
+      --glow: 0 12px 32px rgba(74, 125, 255, 0.25);
+      --radius: 16px;
+      --header-h: 74px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: radial-gradient(circle at top right, #161a36 0%, #070810 40%, #04050a 100%); color: var(--text); font-family: Inter, "Segoe UI", Tahoma, Arial, sans-serif; scroll-behavior: smooth; }
+    body { min-height: 100vh; }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    button, select, input, textarea { font: inherit; }
+
+    .container { width: min(1280px, 92vw); margin-inline: auto; }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      height: var(--header-h);
+      backdrop-filter: blur(12px);
+      background: linear-gradient(180deg, rgba(5, 7, 13, .95), rgba(5, 7, 13, .75));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav {
+      height: 100%;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      font-weight: 800;
+      letter-spacing: .5px;
+      font-size: 1.15rem;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: conic-gradient(from 210deg, #4a7dff, #7b4dff, #4a7dff);
+      display: grid;
+      place-items: center;
+      box-shadow: var(--glow);
+      font-weight: 900;
+    }
+
+    .nav-links {
+      display: flex;
+      justify-content: center;
+      gap: 1.15rem;
+      color: var(--muted);
+      font-weight: 600;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a:hover, .nav-links a.active { color: #fff; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 12px;
+      padding: .6rem .95rem;
+      cursor: pointer;
+      transition: .25s transform, .25s background, .25s box-shadow;
+      color: #fff;
+      background: linear-gradient(135deg, #4a7dff, #6f56ff);
+      box-shadow: 0 8px 18px rgba(74, 125, 255, .25);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn:hover { transform: translateY(-2px); }
+    .btn.secondary { background: #1a1f36; box-shadow: none; }
+    .btn.danger { background: linear-gradient(135deg, #df4769, #ee6581); }
+    .btn.flat { background: rgba(255,255,255,.08); box-shadow: none; }
+
+    .hero {
+      position: relative;
+      margin-top: 1.2rem;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.1);
+      min-height: min(74vh, 620px);
+      background: #090b14;
+    }
+
+    .hero-slide {
+      position: absolute; inset: 0;
+      opacity: 0; transform: scale(1.03);
+      transition: opacity .6s ease, transform 1.8s ease;
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      align-items: stretch;
+    }
+
+    .hero-slide.active { opacity: 1; transform: scale(1); z-index: 2; }
+
+    .hero-media { position: relative; }
+    .hero-media img { width: 100%; height: 100%; object-fit: cover; }
+    .hero-media::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(5,8,16,.35), rgba(5,8,16,.96));
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 3;
+      padding: clamp(1rem, 4vw, 2.5rem);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .85rem;
+      background: linear-gradient(135deg, rgba(10,14,26,.82), rgba(14,8,28,.86));
+    }
+
+    .hero h1 { margin: 0; font-size: clamp(1.35rem, 3.8vw, 3rem); }
+    .hero p { margin: 0; color: #d2dbf8; line-height: 1.55; }
+
+    .meta {
+      display: flex;
+      gap: .8rem;
+      flex-wrap: wrap;
+      color: #dce4ff;
+      font-size: .94rem;
+    }
+
+    .tag {
+      background: rgba(255,255,255,.1);
+      padding: .32rem .58rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+
+    .hero-controls {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      display: flex;
+      gap: .5rem;
+      z-index: 5;
+    }
+
+    .dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      border: 0;
+      background: rgba(255,255,255,.38);
+      cursor: pointer;
+      transition: .2s transform, .2s background;
+    }
+    .dot.active { background: #fff; transform: scale(1.2); }
+
+    .toolbar {
+      margin: 1.1rem 0 .8rem;
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: .6rem;
+      align-items: center;
+    }
+
+    .input,
+    .select {
+      background: #101427;
+      color: #e7edff;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: .7rem .85rem;
+      min-height: 44px;
+    }
+
+    .section { margin-block: 1.7rem; }
+    .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .7rem; }
+    .section h2 { margin: 0; font-size: 1.4rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: .85rem;
+    }
+
+    .card {
+      background: linear-gradient(180deg, #151a2d, #101427);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      transition: .25s transform, .25s box-shadow, .25s border;
+    }
+
+    .card:hover { transform: translateY(-6px); box-shadow: 0 14px 24px rgba(9,12,24,.45); border-color: rgba(102,138,255,.45); }
+    .card .poster { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; }
+    .card-body { padding: .72rem; }
+    .card h3 { margin: 0 0 .25rem; font-size: .96rem; line-height: 1.35; min-height: 2.6em; }
+    .small { color: var(--muted); font-size: .85rem; }
+
+    .rating {
+      position: absolute;
+      top: .55rem; left: .55rem;
+      background: rgba(5,8,16,.85);
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 999px;
+      padding: .28rem .55rem;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+
+    .card-actions { margin-top: .6rem; display: flex; gap: .45rem; }
+
+    .category-list { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .7rem; }
+
+    .chip {
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 999px;
+      padding: .45rem .8rem;
+      color: #dce5ff;
+      background: rgba(255,255,255,.04);
+      cursor: pointer;
+      transition: .2s;
+      font-size: .9rem;
+    }
+
+    .chip:hover, .chip.active { background: rgba(74,125,255,.23); border-color: rgba(120,150,255,.65); }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(0,0,0,.72);
+      backdrop-filter: blur(5px);
+      z-index: 400;
+      padding: .9rem;
+    }
+
+    .modal.open { display: grid; }
+
+    .panel {
+      width: min(1000px, 100%);
+      max-height: min(92vh, 900px);
+      overflow: auto;
+      border-radius: 18px;
+      background: linear-gradient(180deg, #11162a, #0d1121);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 44px rgba(0,0,0,.45);
+      padding: 1rem;
+    }
+
+    .details-wrap { display: grid; grid-template-columns: 320px 1fr; gap: .95rem; }
+    .details-wrap .poster-lg { border-radius: 14px; width: 100%; }
+
+    .video-box { margin-top: 1rem; background: #04060d; border-radius: 14px; border: 1px solid rgba(255,255,255,.1); padding: .7rem; }
+    video { width: 100%; border-radius: 12px; background: #000; max-height: 54vh; }
+
+    .sub-row { display: flex; gap: .6rem; flex-wrap: wrap; margin: .6rem 0; }
+
+    .notification-wrap {
+      position: fixed;
+      right: 1rem;
+      top: calc(var(--header-h) + 1rem);
+      z-index: 500;
+      display: grid;
+      gap: .45rem;
+      width: min(360px, 90vw);
+    }
+
+    .note {
+      padding: .75rem .85rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(17,22,40,.96);
+      animation: pop .35s ease;
+    }
+
+    @keyframes pop { from { opacity: 0; transform: translateY(-8px);} to { opacity: 1; transform: translateY(0);} }
+
+    .admin-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+    .admin-grid .full { grid-column: 1 / -1; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { border-bottom: 1px solid rgba(255,255,255,.09); padding: .5rem; text-align: start; font-size: .92rem; }
+
+    .empty { padding: 1rem; text-align: center; color: var(--muted); border: 1px dashed rgba(255,255,255,.17); border-radius: 12px; }
+
+    .footer { margin: 2rem 0 1.4rem; color: #a8b4d8; text-align: center; }
+
+    @media (max-width: 1120px) {
+      .grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+      .hero-slide { grid-template-columns: 1fr; }
+      .hero-content { position: absolute; inset: auto 0 0 0; }
+      .hero-media::after { background: linear-gradient(180deg, rgba(0,0,0,.15), rgba(6,8,16,.95)); }
+    }
+
+    @media (max-width: 820px) {
+      .grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .toolbar { grid-template-columns: 1fr 1fr; }
+      .nav { grid-template-columns: 1fr; height: auto; padding: .6rem 0; }
+      header { height: auto; position: sticky; }
+      .details-wrap { grid-template-columns: 1fr; }
+      .admin-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .toolbar { grid-template-columns: 1fr; }
+      .hero { min-height: 510px; }
+      .nav-links { justify-content: flex-start; overflow: auto; white-space: nowrap; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav">
+      <div class="brand"><span class="logo">CM</span> <span id="brandText">Cinema MIX</span></div>
+      <nav class="nav-links">
+        <a href="#home" class="active" data-i18n="navHome">Home</a>
+        <a href="#new" data-i18n="navNew">New</a>
+        <a href="#trending" data-i18n="navTrending">Trending</a>
+        <a href="#watched" data-i18n="navWatched">Most Watched</a>
+      </nav>
+      <div class="nav-actions">
+        <button id="langBtn" class="btn secondary">AR</button>
+        <button id="adminBtn" class="btn flat" title="Admin">⚙</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="home" class="container">
+    <section class="hero" id="hero"></section>
+
+    <section class="toolbar" aria-label="search and filters">
+      <input id="searchInput" class="input" placeholder="Search movies..." data-i18n-placeholder="searchPlaceholder" />
+      <select id="categoryFilter" class="select"></select>
+      <select id="yearFilter" class="select"></select>
+      <button id="clearFilters" class="btn secondary" data-i18n="clearFilters">Clear</button>
+    </section>
+
+    <section class="section" id="categoriesSec">
+      <div class="section-head"><h2 data-i18n="categories">Categories</h2></div>
+      <div id="categoryChips" class="category-list"></div>
+    </section>
+
+    <section class="section" id="new">
+      <div class="section-head"><h2 data-i18n="newMovies">New Movies</h2></div>
+      <div id="newGrid" class="grid"></div>
+    </section>
+
+    <section class="section" id="trending">
+      <div class="section-head"><h2 data-i18n="trending">Trending</h2></div>
+      <div id="trendingGrid" class="grid"></div>
+    </section>
+
+    <section class="section" id="watched">
+      <div class="section-head"><h2 data-i18n="mostWatched">Most Watched</h2></div>
+      <div id="watchedGrid" class="grid"></div>
+    </section>
+
+    <p class="footer">© <span id="yearNow"></span> Cinema MIX • <span data-i18n="footerText">Built for movie lovers.</span></p>
+  </main>
+
+  <div class="modal" id="detailsModal">
+    <div class="panel" role="dialog" aria-modal="true">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;">
+        <h2 id="detailsTitle" style="margin:0;" data-i18n="movieDetails">Movie Details</h2>
+        <button class="btn secondary" onclick="closeModal('detailsModal')" data-i18n="close">Close</button>
+      </div>
+      <div id="detailsBody"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="adminLoginModal">
+    <div class="panel" style="max-width:460px;">
+      <h2 data-i18n="adminLogin">Admin Login</h2>
+      <p class="small" data-i18n="adminHint">Private mode only. Enter secure passcode.</p>
+      <input id="adminPass" class="input" type="password" placeholder="Passcode" style="width:100%;margin:.5rem 0;" />
+      <div style="display:flex;justify-content:flex-end;gap:.55rem;">
+        <button class="btn secondary" onclick="closeModal('adminLoginModal')" data-i18n="cancel">Cancel</button>
+        <button class="btn" id="adminLoginBtn" data-i18n="login">Login</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="adminPanelModal">
+    <div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem;">
+        <h2 style="margin:0;" data-i18n="adminPanel">Admin Panel</h2>
+        <div style="display:flex;gap:.55rem;">
+          <button id="adminLogoutBtn" class="btn danger" data-i18n="logout">Logout</button>
+          <button class="btn secondary" onclick="closeModal('adminPanelModal')" data-i18n="close">Close</button>
+        </div>
+      </div>
+
+      <form id="movieForm" style="margin-top:.9rem;">
+        <input type="hidden" id="movieId" />
+        <div class="admin-grid">
+          <input class="input" id="mTitle" required placeholder="Movie title" />
+          <input class="input" id="mYear" type="number" min="1950" max="2100" required placeholder="Release year" />
+          <input class="input" id="mRating" type="number" min="0" max="10" step="0.1" required placeholder="Rating 0-10" />
+          <input class="input" id="mDuration" required placeholder="Duration e.g. 2h 10m" />
+          <input class="input full" id="mGenres" required placeholder="Genres comma separated" />
+          <input class="input" id="mLanguage" required placeholder="Language" />
+          <input class="input" id="mCategory" required placeholder="Category" />
+          <input class="input full" id="mPoster" required placeholder="Poster image URL" />
+          <input class="input full" id="mVideo" required placeholder="Video URL (MP4)" />
+          <input class="input full" id="mTrailer" placeholder="Trailer URL (YouTube/embed)" />
+          <input class="input full" id="mSubtitle" placeholder="Subtitle URL (.vtt)" />
+          <textarea class="input full" id="mDesc" rows="3" required placeholder="Movie description"></textarea>
+          <input class="input full" id="mSimilar" placeholder="Similar movie titles comma separated" />
+        </div>
+        <div style="display:flex;gap:.55rem;justify-content:flex-end;margin-top:.75rem;">
+          <button type="button" id="resetFormBtn" class="btn secondary" data-i18n="reset">Reset</button>
+          <button type="submit" class="btn" id="saveBtn" data-i18n="saveMovie">Save Movie</button>
+        </div>
+      </form>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th><th data-i18n="title">Title</th><th data-i18n="year">Year</th><th data-i18n="actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="adminTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="notification-wrap" id="notifications"></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const ADMIN_HASH = "cinemamix_private_2026";
+      const STORAGE_KEY = "cinemamix_movies_v1";
+      const FAV_KEY = "cinemamix_fav_v1";
+      const WATCH_KEY = "cinemamix_watch_v1";
+      const LANG_KEY = "cinemamix_lang";
+
+      const t = {
+        en: {
+          navHome: "Home", navNew: "New", navTrending: "Trending", navWatched: "Most Watched",
+          searchPlaceholder: "Search movies...", clearFilters: "Clear", categories: "Categories",
+          newMovies: "New Movies", trending: "Trending", mostWatched: "Most Watched", footerText: "Built for movie lovers.",
+          movieDetails: "Movie Details", close: "Close", adminLogin: "Admin Login", adminHint: "Private mode only. Enter secure passcode.",
+          cancel: "Cancel", login: "Login", adminPanel: "Admin Panel", logout: "Logout", reset: "Reset", saveMovie: "Save Movie",
+          title: "Title", year: "Year", actions: "Actions", watchNow: "Watch Now", trailer: "Watch Trailer", addFav: "Favorite",
+          addWatchlist: "Watchlist", remove: "Delete", edit: "Edit", noMovies: "No movies found.", allCategories: "All Categories",
+          allYears: "All Years", saved: "Movie saved successfully", deleted: "Movie deleted", badLogin: "Invalid passcode",
+          loginOk: "Admin access granted", loggedOut: "Admin logged out", updated: "Movie updated", added: "Movie added",
+          subtitle: "Subtitles", quality: "Quality", similarMovies: "Similar Movies", language: "Language", duration: "Duration",
+          release: "Release", rating: "Rating", genres: "Genres", privateTip: "Tip: Press Ctrl+Shift+A for private admin login."
+        },
+        ar: {
+          navHome: "الرئيسية", navNew: "الجديد", navTrending: "الأكثر رواجًا", navWatched: "الأكثر مشاهدة",
+          searchPlaceholder: "ابحث عن فيلم...", clearFilters: "مسح", categories: "التصنيفات",
+          newMovies: "أفلام جديدة", trending: "ترند", mostWatched: "الأكثر مشاهدة", footerText: "مصمم لعشاق الأفلام.",
+          movieDetails: "تفاصيل الفيلم", close: "إغلاق", adminLogin: "تسجيل دخول المشرف", adminHint: "وضع خاص فقط. أدخل رمز المرور.",
+          cancel: "إلغاء", login: "دخول", adminPanel: "لوحة المشرف", logout: "خروج", reset: "إعادة", saveMovie: "حفظ الفيلم",
+          title: "العنوان", year: "السنة", actions: "الإجراءات", watchNow: "مشاهدة الآن", trailer: "مشاهدة الإعلان", addFav: "مفضلة",
+          addWatchlist: "المشاهدة لاحقًا", remove: "حذف", edit: "تعديل", noMovies: "لا توجد أفلام.", allCategories: "كل التصنيفات",
+          allYears: "كل السنوات", saved: "تم حفظ الفيلم بنجاح", deleted: "تم حذف الفيلم", badLogin: "رمز مرور غير صحيح",
+          loginOk: "تم تفعيل دخول المشرف", loggedOut: "تم تسجيل الخروج", updated: "تم تحديث الفيلم", added: "تمت إضافة الفيلم",
+          subtitle: "الترجمة", quality: "الجودة", similarMovies: "أفلام مشابهة", language: "اللغة", duration: "المدة",
+          release: "الإصدار", rating: "التقييم", genres: "الأنواع", privateTip: "نصيحة: اضغط Ctrl+Shift+A للدخول الخاص للمشرف."
+        }
+      };
+
+      const seedMovies = [
+        { id: uid(), title: "Dune: Eclipse", year: 2024, rating: 8.7, duration: "2h 36m", genres: ["Sci-Fi", "Adventure"], category: "Action", language: "English", poster: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?q=80&w=900&auto=format&fit=crop", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4", trailer: "https://www.youtube.com/embed/8g18jFHCLXk", subtitle: "https://raw.githubusercontent.com/videojs/video.js/main/docs/examples/shared/example-captions.vtt", description: "A noble warrior leads a rebellion across desert worlds ruled by ruthless empires.", similar: ["Sky Dominion", "Solar Oath"], tags: ["new", "trending"] },
+        { id: uid(), title: "Midnight Alley", year: 2023, rating: 7.9, duration: "1h 56m", genres: ["Thriller", "Crime"], category: "Drama", language: "Arabic", poster: "https://images.unsplash.com/photo-1497032205916-ac775f0649ae?q=80&w=900&auto=format&fit=crop", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", trailer: "https://www.youtube.com/embed/7TavVZMewpY", subtitle: "", description: "A journalist uncovers a dark conspiracy hidden beneath neon-lit streets.", similar: ["Neon Whispers", "Last Witness"], tags: ["trending", "watched"] },
+        { id: uid(), title: "Laugh Out Loud", year: 2022, rating: 7.1, duration: "1h 44m", genres: ["Comedy", "Family"], category: "Comedy", language: "English", poster: "https://images.unsplash.com/photo-1489599511025-1807d8f0f0c5?q=80&w=900&auto=format&fit=crop", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", trailer: "https://www.youtube.com/embed/aqz-KE-bpKQ", subtitle: "", description: "A struggling actor and his quirky neighbors turn a failing theater into a viral sensation.", similar: ["Street Stage", "Funny Bones"], tags: ["new"] },
+        { id: uid(), title: "Haunted Echo", year: 2024, rating: 8.1, duration: "2h 02m", genres: ["Horror", "Mystery"], category: "Horror", language: "English", poster: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=900&auto=format&fit=crop", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4", trailer: "https://www.youtube.com/embed/kXYiU_JCYtU", subtitle: "", description: "After moving into a forgotten mansion, siblings awaken voices from another time.", similar: ["Silent Hall", "Shadow House"], tags: ["new", "watched"] },
+        { id: uid(), title: "City of Ashes", year: 2021, rating: 8.4, duration: "2h 12m", genres: ["Action", "Drama"], category: "Action", language: "Arabic", poster: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=900&auto=format&fit=crop", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", trailer: "https://www.youtube.com/embed/K4TOrB7at0Y", subtitle: "", description: "An ex-commander battles corruption to protect his city from collapse.", similar: ["Final Sector", "Iron Vow"], tags: ["watched", "trending"] },
+        { id: uid(), title: "Blue Horizon", year: 2020, rating: 7.5, duration: "1h 48m", genres: ["Romance", "Drama"], category: "Drama", language: "English", poster: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop", video: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4", trailer: "https://www.youtube.com/embed/5PSNL1qE6VY", subtitle: "", description: "Two travelers find love while chasing a dream across coastal cities.", similar: ["Summer Fade", "Distance"], tags: ["watched"] }
+      ];
+
+      let state = {
+        lang: localStorage.getItem(LANG_KEY) || "en",
+        movies: safeLoad(STORAGE_KEY, seedMovies),
+        favorites: new Set(safeLoad(FAV_KEY, [])),
+        watchlist: new Set(safeLoad(WATCH_KEY, [])),
+        isAdmin: false,
+        heroIndex: 0,
+        search: "",
+        category: "all",
+        year: "all"
+      };
+
+      const el = {
+        hero: q("#hero"), newGrid: q("#newGrid"), trendingGrid: q("#trendingGrid"), watchedGrid: q("#watchedGrid"),
+        searchInput: q("#searchInput"), categoryFilter: q("#categoryFilter"), yearFilter: q("#yearFilter"), clearFilters: q("#clearFilters"),
+        langBtn: q("#langBtn"), notifications: q("#notifications"), categoryChips: q("#categoryChips"), yearNow: q("#yearNow"),
+        detailsModal: q("#detailsModal"), detailsBody: q("#detailsBody"), adminLoginModal: q("#adminLoginModal"), adminPanelModal: q("#adminPanelModal"),
+        adminBtn: q("#adminBtn"), adminLoginBtn: q("#adminLoginBtn"), adminPass: q("#adminPass"), adminLogoutBtn: q("#adminLogoutBtn"),
+        movieForm: q("#movieForm"), adminTable: q("#adminTable"), resetFormBtn: q("#resetFormBtn")
+      };
+
+      init();
+
+      function init() {
+        el.yearNow.textContent = String(new Date().getFullYear());
+        applyI18n();
+        renderFilters();
+        renderCategories();
+        renderAllSections();
+        renderHero();
+        renderAdminTable();
+        wireEvents();
+        notify(text("privateTip"), "info");
+      }
+
+      function wireEvents() {
+        el.searchInput.addEventListener("input", (e) => { state.search = e.target.value.trim().toLowerCase(); renderAllSections(); });
+        el.categoryFilter.addEventListener("change", (e) => { state.category = e.target.value; renderAllSections(); markActiveChip(); });
+        el.yearFilter.addEventListener("change", (e) => { state.year = e.target.value; renderAllSections(); });
+        el.clearFilters.addEventListener("click", () => {
+          state.search = ""; state.category = "all"; state.year = "all";
+          el.searchInput.value = ""; renderFilters(); renderAllSections(); markActiveChip();
+        });
+
+        el.langBtn.addEventListener("click", () => {
+          state.lang = state.lang === "en" ? "ar" : "en";
+          localStorage.setItem(LANG_KEY, state.lang);
+          applyI18n(); renderFilters(); renderCategories(); renderAllSections(); renderHero(); renderAdminTable();
+        });
+
+        el.adminBtn.addEventListener("click", () => openModal("adminLoginModal"));
+        el.adminLoginBtn.addEventListener("click", loginAdmin);
+        el.adminPass.addEventListener("keydown", (e) => { if (e.key === "Enter") loginAdmin(); });
+        el.adminLogoutBtn.addEventListener("click", () => {
+          state.isAdmin = false; closeModal("adminPanelModal"); notify(text("loggedOut"), "warn");
+        });
+
+        el.movieForm.addEventListener("submit", saveMovieFromForm);
+        el.resetFormBtn.addEventListener("click", resetMovieForm);
+
+        document.addEventListener("keydown", (e) => {
+          if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "a") {
+            openModal("adminLoginModal");
+          }
+          if (e.key === "Escape") {
+            ["detailsModal", "adminLoginModal", "adminPanelModal"].forEach(closeModal);
+          }
+        });
+
+        setInterval(() => {
+          const featured = getFiltered().slice(0, 5);
+          if (!featured.length) return;
+          state.heroIndex = (state.heroIndex + 1) % featured.length;
+          activateHero(state.heroIndex);
+        }, 5500);
+      }
+
+      function applyI18n() {
+        document.documentElement.lang = state.lang;
+        document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+        el.langBtn.textContent = state.lang === "en" ? "AR" : "EN";
+        qa("[data-i18n]").forEach(node => {
+          const key = node.dataset.i18n;
+          node.textContent = text(key);
+        });
+        qa("[data-i18n-placeholder]").forEach(node => {
+          const key = node.dataset.i18nPlaceholder;
+          node.placeholder = text(key);
+        });
+      }
+
+      function renderHero() {
+        const featured = getFiltered().slice(0, 5);
+        if (!featured.length) {
+          el.hero.innerHTML = `<div class="empty" style="margin:1rem;">${text("noMovies")}</div>`;
+          return;
+        }
+        state.heroIndex %= featured.length;
+        el.hero.innerHTML = featured.map((m, i) => `
+          <article class="hero-slide ${i === state.heroIndex ? "active" : ""}" data-hero="${i}">
+            <div class="hero-media"><img src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}"></div>
+            <div class="hero-content">
+              <div class="meta"><span class="tag">⭐ ${m.rating}</span><span class="tag">${m.year}</span><span class="tag">${escapeHtml(m.category)}</span></div>
+              <h1>${escapeHtml(m.title)}</h1>
+              <p>${escapeHtml(m.description)}</p>
+              <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-top:.3rem;">
+                <button class="btn" onclick="window.__openDetails('${m.id}')">${text("watchNow")}</button>
+                <button class="btn secondary" onclick="window.__toggleFav('${m.id}')">❤ ${text("addFav")}</button>
+              </div>
+            </div>
+          </article>
+        `).join("") + `<div class="hero-controls">${featured.map((_, i) => `<button class="dot ${i===state.heroIndex?"active":""}" onclick="window.__goHero(${i})"></button>`).join("")}</div>`;
+      }
+
+      function activateHero(idx) {
+        qa(".hero-slide", el.hero).forEach((s, i) => s.classList.toggle("active", i === idx));
+        qa(".dot", el.hero).forEach((d, i) => d.classList.toggle("active", i === idx));
+      }
+
+      function renderFilters() {
+        const cats = ["all", ...new Set(state.movies.map(m => m.category))];
+        const years = ["all", ...new Set(state.movies.map(m => m.year).sort((a,b)=>b-a))];
+        el.categoryFilter.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}" ${c===state.category?"selected":""}>${c==="all"?text("allCategories"):escapeHtml(c)}</option>`).join("");
+        el.yearFilter.innerHTML = years.map(y => `<option value="${y}" ${String(y)===String(state.year)?"selected":""}>${y==="all"?text("allYears"):y}</option>`).join("");
+      }
+
+      function renderCategories() {
+        const cats = ["all", ...new Set(state.movies.map(m => m.category))];
+        el.categoryChips.innerHTML = cats.map(c => `<button class="chip ${c===state.category?"active":""}" data-cat="${escapeHtml(c)}">${c==="all"?text("allCategories"):escapeHtml(c)}</button>`).join("");
+        qa(".chip", el.categoryChips).forEach(ch => ch.addEventListener("click", () => {
+          state.category = ch.dataset.cat;
+          renderFilters(); renderAllSections(); markActiveChip();
+        }));
+      }
+
+      function markActiveChip() {
+        qa(".chip", el.categoryChips).forEach(ch => ch.classList.toggle("active", ch.dataset.cat === state.category));
+      }
+
+      function renderAllSections() {
+        const movies = getFiltered();
+        renderGrid(el.newGrid, movies.filter(m => m.tags?.includes("new")).slice(0, 10));
+        renderGrid(el.trendingGrid, movies.filter(m => m.tags?.includes("trending")).slice(0, 10));
+        renderGrid(el.watchedGrid, movies.filter(m => m.tags?.includes("watched")).slice(0, 10));
+        renderHero();
+      }
+
+      function renderGrid(target, list) {
+        if (!list.length) {
+          target.innerHTML = `<div class="empty" style="grid-column:1/-1;">${text("noMovies")}</div>`;
+          return;
+        }
+        target.innerHTML = list.map(m => {
+          const isFav = state.favorites.has(m.id);
+          const inWatch = state.watchlist.has(m.id);
+          return `<article class="card">
+            <span class="rating">⭐ ${m.rating}</span>
+            <img class="poster" src="${escapeHtml(m.poster)}" loading="lazy" alt="${escapeHtml(m.title)}" />
+            <div class="card-body">
+              <h3>${escapeHtml(m.title)}</h3>
+              <div class="small">${m.year} • ${escapeHtml(m.category)}</div>
+              <div class="card-actions">
+                <button class="btn" style="flex:1" onclick="window.__openDetails('${m.id}')">${text("watchNow")}</button>
+              </div>
+              <div class="card-actions">
+                <button class="btn secondary" style="flex:1" onclick="window.__toggleFav('${m.id}')">${isFav ? "♥" : "♡"} ${text("addFav")}</button>
+                <button class="btn flat" style="flex:1" onclick="window.__toggleWatch('${m.id}')">${inWatch ? "✓" : "+"} ${text("addWatchlist")}</button>
+              </div>
+            </div>
+          </article>`;
+        }).join("");
+      }
+
+      function getFiltered() {
+        return state.movies.filter(m => {
+          const bySearch = !state.search || m.title.toLowerCase().includes(state.search);
+          const byCat = state.category === "all" || m.category === state.category;
+          const byYear = state.year === "all" || String(m.year) === String(state.year);
+          return bySearch && byCat && byYear;
+        });
+      }
+
+      function openDetails(id) {
+        const m = state.movies.find(x => x.id === id);
+        if (!m) return notify("Movie not found", "error");
+        const similar = (m.similar || []).map(title => state.movies.find(sm => sm.title.toLowerCase() === title.toLowerCase())).filter(Boolean);
+        el.detailsBody.innerHTML = `
+          <div class="details-wrap">
+            <img class="poster-lg" src="${escapeHtml(m.poster)}" alt="${escapeHtml(m.title)}" />
+            <div>
+              <h3 style="margin:.2rem 0 .5rem;">${escapeHtml(m.title)}</h3>
+              <p style="color:#d6defa;line-height:1.6">${escapeHtml(m.description)}</p>
+              <div class="sub-row">
+                <span class="tag">${text("rating")}: ⭐ ${m.rating}</span>
+                <span class="tag">${text("release")}: ${m.year}</span>
+                <span class="tag">${text("duration")}: ${escapeHtml(m.duration)}</span>
+                <span class="tag">${text("language")}: ${escapeHtml(m.language)}</span>
+              </div>
+              <div class="sub-row"><span class="tag">${text("genres")}: ${escapeHtml((m.genres || []).join(", "))}</span></div>
+              <div style="display:flex;gap:.55rem;flex-wrap:wrap;margin-top:.6rem;">
+                <button class="btn" onclick="window.__playMovie('${m.id}','720p')">720p</button>
+                <button class="btn secondary" onclick="window.__playMovie('${m.id}','1080p')">1080p</button>
+                ${m.trailer ? `<a class="btn flat" target="_blank" rel="noopener" href="${escapeHtml(m.trailer)}">${text("trailer")}</a>` : ""}
+              </div>
+              <div id="playerHost"></div>
+              <h4 style="margin:1rem 0 .4rem;">${text("similarMovies")}</h4>
+              <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));">
+                ${similar.map(s => `<article class="card"><img class="poster" src="${escapeHtml(s.poster)}" alt="${escapeHtml(s.title)}"><div class="card-body"><h3>${escapeHtml(s.title)}</h3><button class="btn secondary" onclick="window.__openDetails('${s.id}')">${text("watchNow")}</button></div></article>`).join("") || `<div class="small">-</div>`}
+              </div>
+            </div>
+          </div>
+        `;
+        openModal("detailsModal");
+      }
+
+      function playMovie(id, quality) {
+        const m = state.movies.find(x => x.id === id);
+        if (!m) return;
+        const src = m.video;
+        const subtitleTrack = m.subtitle ? `<track label="${text("subtitle")}" kind="subtitles" srclang="${state.lang}" src="${escapeHtml(m.subtitle)}" default>` : "";
+        const host = q("#playerHost", el.detailsBody);
+        host.innerHTML = `
+          <div class="video-box">
+            <div class="small" style="margin-bottom:.4rem;">${text("quality")}: ${quality}</div>
+            <video controls playsinline preload="metadata">
+              <source src="${escapeHtml(src)}" type="video/mp4">
+              ${subtitleTrack}
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        `;
+      }
+
+      function loginAdmin() {
+        const pass = el.adminPass.value.trim();
+        if (pass !== ADMIN_HASH) return notify(text("badLogin"), "error");
+        state.isAdmin = true;
+        el.adminPass.value = "";
+        closeModal("adminLoginModal");
+        openModal("adminPanelModal");
+        notify(text("loginOk"), "success");
+      }
+
+      function saveMovieFromForm(e) {
+        e.preventDefault();
+        if (!state.isAdmin) return notify("Unauthorized", "error");
+        const data = {
+          id: q("#movieId").value || uid(),
+          title: q("#mTitle").value.trim(),
+          year: Number(q("#mYear").value),
+          rating: Number(q("#mRating").value),
+          duration: q("#mDuration").value.trim(),
+          genres: q("#mGenres").value.split(",").map(x => x.trim()).filter(Boolean),
+          language: q("#mLanguage").value.trim(),
+          category: q("#mCategory").value.trim(),
+          poster: q("#mPoster").value.trim(),
+          video: q("#mVideo").value.trim(),
+          trailer: q("#mTrailer").value.trim(),
+          subtitle: q("#mSubtitle").value.trim(),
+          description: q("#mDesc").value.trim(),
+          similar: q("#mSimilar").value.split(",").map(x => x.trim()).filter(Boolean),
+          tags: ["new"]
+        };
+
+        if (!data.title || !data.poster || !data.video || Number.isNaN(data.year) || Number.isNaN(data.rating)) {
+          return notify("Please fill all required fields", "error");
+        }
+
+        const idx = state.movies.findIndex(m => m.id === data.id);
+        if (idx >= 0) {
+          state.movies[idx] = { ...state.movies[idx], ...data };
+          notify(text("updated"), "success");
+        } else {
+          state.movies.unshift(data);
+          notify(text("added"), "success");
+        }
+
+        persistMovies();
+        resetMovieForm();
+        refreshUI();
+      }
+
+      function renderAdminTable() {
+        el.adminTable.innerHTML = state.movies.map((m, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(m.title)}</td>
+            <td>${m.year}</td>
+            <td>
+              <button class="btn secondary" onclick="window.__editMovie('${m.id}')">${text("edit")}</button>
+              <button class="btn danger" onclick="window.__deleteMovie('${m.id}')">${text("remove")}</button>
+            </td>
+          </tr>
+        `).join("");
+      }
+
+      function editMovie(id) {
+        if (!state.isAdmin) return notify("Unauthorized", "error");
+        const m = state.movies.find(x => x.id === id);
+        if (!m) return;
+        q("#movieId").value = m.id;
+        q("#mTitle").value = m.title;
+        q("#mYear").value = m.year;
+        q("#mRating").value = m.rating;
+        q("#mDuration").value = m.duration;
+        q("#mGenres").value = (m.genres || []).join(", ");
+        q("#mLanguage").value = m.language;
+        q("#mCategory").value = m.category;
+        q("#mPoster").value = m.poster;
+        q("#mVideo").value = m.video;
+        q("#mTrailer").value = m.trailer || "";
+        q("#mSubtitle").value = m.subtitle || "";
+        q("#mDesc").value = m.description;
+        q("#mSimilar").value = (m.similar || []).join(", ");
+      }
+
+      function deleteMovie(id) {
+        if (!state.isAdmin) return notify("Unauthorized", "error");
+        state.movies = state.movies.filter(m => m.id !== id);
+        state.favorites.delete(id);
+        state.watchlist.delete(id);
+        persistMovies(); persistSets();
+        refreshUI();
+        notify(text("deleted"), "warn");
+      }
+
+      function resetMovieForm() {
+        el.movieForm.reset();
+        q("#movieId").value = "";
+      }
+
+      function refreshUI() {
+        renderFilters(); renderCategories(); renderAllSections(); renderAdminTable();
+      }
+
+      function persistMovies() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.movies));
+      }
+
+      function persistSets() {
+        localStorage.setItem(FAV_KEY, JSON.stringify([...state.favorites]));
+        localStorage.setItem(WATCH_KEY, JSON.stringify([...state.watchlist]));
+      }
+
+      function toggleFav(id) {
+        state.favorites.has(id) ? state.favorites.delete(id) : state.favorites.add(id);
+        persistSets(); renderAllSections();
+      }
+
+      function toggleWatch(id) {
+        state.watchlist.has(id) ? state.watchlist.delete(id) : state.watchlist.add(id);
+        persistSets(); renderAllSections();
+      }
+
+      function notify(message, type = "info") {
+        const color = type === "error" ? "var(--danger)" : type === "success" ? "var(--success)" : type === "warn" ? "var(--warning)" : "var(--primary)";
+        const node = document.createElement("div");
+        node.className = "note";
+        node.style.borderInlineStart = `4px solid ${color}`;
+        node.textContent = message;
+        el.notifications.appendChild(node);
+        setTimeout(() => { node.style.opacity = "0"; node.style.transform = "translateY(-8px)"; }, 2400);
+        setTimeout(() => node.remove(), 2800);
+      }
+
+      function openModal(id) { q(`#${id}`).classList.add("open"); }
+      function closeModal(id) { q(`#${id}`).classList.remove("open"); }
+      function text(key) { return (t[state.lang] && t[state.lang][key]) || key; }
+
+      function safeLoad(key, fallback) {
+        try {
+          const data = JSON.parse(localStorage.getItem(key));
+          return data ?? fallback;
+        } catch {
+          return fallback;
+        }
+      }
+
+      function uid() { return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`; }
+
+      function escapeHtml(v) {
+        return String(v ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function q(sel, root = document) { return root.querySelector(sel); }
+      function qa(sel, root = document) { return Array.from(root.querySelectorAll(sel)); }
+
+      window.__openDetails = openDetails;
+      window.__playMovie = playMovie;
+      window.__toggleFav = toggleFav;
+      window.__toggleWatch = toggleWatch;
+      window.__editMovie = editMovie;
+      window.__deleteMovie = deleteMovie;
+      window.__goHero = (i) => { state.heroIndex = i; activateHero(i); };
+      window.closeModal = closeModal;
+    })();
+  </script>
+</body>
+</html>
